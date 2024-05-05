@@ -2,13 +2,20 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 import os
 
-basedir = os.path.abspath(os.path.dirname(__file__))
-database_dir = os.path.join(basedir, '..', 'db')
-database_path = os.path.join(database_dir, '..', 'datastore.db')
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + database_path
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///../db/datastore.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+db = SQLAlchemy(app)  # Initialize SQLAlchemy
+
+# Define your database models using SQLAlchemy's declarative syntax
+class Users(db.Model):
+    username = db.Column(db.String(80), primary_key=True)
+    password = db.Column(db.String(80), unique=True, nullable=False)
+
+    def __repr__(self):
+        return f'<User {self.username}>'
 
 @app.route('/')
 def hello_world():
@@ -16,7 +23,10 @@ def hello_world():
 
 @app.route('/<username>')
 def hello_user(username):
-    return 'Hello, ' + username + ' !'
+    user = Users.query.filter_by(username=username).first()
+    if user is None:
+        return 'User not found!'
+    return 'Hello, ' + str(username) + ' !'
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0')
